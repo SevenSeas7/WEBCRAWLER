@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,7 +12,8 @@ import java.util.regex.Pattern;
 public class WebCrawler {
 	ArrayList<String> allurls = new ArrayList<String>(); 
 	ArrayList<String> notCrawlurls = new ArrayList<String>(); 
-
+	//Thread safe queries. 
+	final static Vector <String> sqlqueries = new Vector<String>() ;
 	int threadCount = 5;
 	int count = 0; 
 	public static final Object signal = new Object();
@@ -30,7 +32,9 @@ public class WebCrawler {
 		while(true){
 			if(wc.notCrawlurls.isEmpty()&& Thread.activeCount() == 1||wc.count==wc.threadCount){
 				long end = System.currentTimeMillis();
-				System.out.println("总共耗时"+(end-start)/1000+"秒");
+				System.out.println("爬虫总共耗时"+(end-start)/1000+"秒");
+				SQL.Connect();
+				SQL.InsertBookInfo(sqlqueries);
 				SQL.Close();
 				System.exit(1);
 			}
@@ -44,6 +48,7 @@ public class WebCrawler {
 					while (true) { 
 						String tmp = getUrl();
 						if(tmp!=null){
+							SQL.Connect();
 							crawler(tmp);
 						}else{
 							synchronized(signal){ 
@@ -108,8 +113,8 @@ public class WebCrawler {
 		ArrayList<String> info = getElements(regex[1], context);
 		ArrayList<String> rating = getElements(regex[2], context);
 		ArrayList<String> number = getElements(regex[3], context);
-		ArrayList<String> sqlqueries = new ArrayList<String>();
-		for(int i =0; i<title.size();i++){
+		//ArrayList<String> sqlqueries = new ArrayList<String>();
+		for(int i = 0; i<title.size();i++){
 			String author = "";
 			String insert = "";
 			String[] splitinfo = info.get(i).split("/");
@@ -123,14 +128,9 @@ public class WebCrawler {
 			}else{
 				insert = "'"+title.get(i)+"',"+getIntergerString(rating.get(i))+","+getIntergerString(number.get(i))+",'"+ info.get(i)+"',' ',' ',"+0+",'"+url.split("tag/|\\?start=")[1]+"'";
 			}
-			
-			System.out.println(insert);
+			//System.out.println(insert);
 			sqlqueries.add(insert);
 		}
-		//插入数据库。。。。SQLITE 不支持多线程读写 这部分有问题。。。。也许换成MYSQL会好一点。。。。。
-		SQL.Connect();
-		SQL.InsertBookInfo(sqlqueries);
-		SQL.Close();
 	}
 	
 	public String getIntergerString(String s){

@@ -1,21 +1,25 @@
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.*; 
+import java.util.Vector;
+
+import org.sqlite.SQLiteConfig;
+import org.sqlite.SQLiteOpenMode;
 
 public class SQL{
 	private static Connection c = null;
   
 	public static void Connect()  {
-		//boolean isConn = false;
 		try {
-			Class.forName("org.sqlite.JDBC");
-		  	c = DriverManager.getConnection("jdbc:sqlite:douban.db");
-		  	//isConn = true;
+			SQLiteConfig config = new SQLiteConfig();
+			config.setOpenMode(SQLiteOpenMode.READWRITE);
+			config.setOpenMode(SQLiteOpenMode.NOMUTEX);
+			
+			Class.forName("org.sqlite.JDBC"); 
+		  	c = DriverManager.getConnection("jdbc:sqlite:douban.db",config.toProperties());
 		} catch ( Exception e) {
 			Close();
 			System.err.println(e.getMessage() );
 			System.exit(0);
 		}
-		//return isConn;  
 	}
 	
 	public static void Close()  {
@@ -25,11 +29,9 @@ public class SQL{
 			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
 			System.exit(0);
 		}
-		System.out.println("Close database successfully");
   }
   
-  public static void InsertBookInfo(ArrayList<String> queries){
-	  //if(Connect()){
+  public static void InsertBookInfo(Vector<String> queries){
 		  Statement stmt = null;
 		  try{
 			  c.setAutoCommit(false);
@@ -38,16 +40,12 @@ public class SQL{
 			      String sql = "INSERT INTO BOOKS (ID,TITLE,SCORE,NUMBER_COMMENTS,AUTHOR,PUBLISHER,DATE,PRICE,TAG) " +
 		                   "VALUES (NULL,"+s+");"; 
 			      stmt.executeUpdate(sql);
-		      }
+			      }
 		      stmt.close();
 		      c.commit(); 
-		    }catch(Exception e){
+		  }catch(Exception e){
 		      System.err.println(e.getMessage());
 		      System.exit(0);
-		    }  
-	  //}else {  
-		   //Close();  
-		   //System.out.println("Cannot update database");
-	  //}
+     	    }  
   }
 }
